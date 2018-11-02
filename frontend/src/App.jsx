@@ -35,9 +35,15 @@ class App extends Component {
               });
             }
           }.bind(this)
-        );
+        )
+        .catch(() => {
+          clearInterval(int);
+          this.props.dispatch({
+            type: "disconnect"
+          });
+        });
     }.bind(this);
-    setInterval(update, 1000);
+    let int = setInterval(update, 1000);
   }
   handleSubmiteMessage(event) {
     event.preventDefault();
@@ -104,14 +110,21 @@ class App extends Component {
       </div>
     );
 
+    let disconnected = <h1>Server Went Off !</h1>;
+
     let usedForm = mainForm;
     if (this.props.signedIn) usedForm = chatForm;
+    if (!this.props.connected) usedForm = disconnected;
     return <div className="App">{usedForm}</div>;
   }
 }
 
 let mapStateToProps = function(state) {
-  return { signedIn: state.signedIn, sessionId: state.sessionId };
+  return {
+    signedIn: state.signedIn,
+    sessionId: state.sessionId,
+    connected: state.connected
+  };
 };
 
 let ConnectedApp = connect(mapStateToProps)(App);

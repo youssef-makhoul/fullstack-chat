@@ -15,14 +15,24 @@ app.use(bodyParser.raw({
     type: '*/*'
 }))
 
+Users.push(new User("Admin","Admin","-1"));
+
 function getMessages() {
-    return Messages.map(message => {
+    if (Messages.length < 10) return Messages.map(message => {
         return {
             username: message.username,
             messageBody: message.messageBody,
             subtime: message.getFormatedSubmiteTime()
         }
-    }).slice(Math.max(Messages.length - MAX_MESSAGES_PER_RESPONSE, 1))
+    })
+    else
+        return Messages.map(message => {
+            return {
+                username: message.username,
+                messageBody: message.messageBody,
+                subtime: message.getFormatedSubmiteTime()
+            }
+        }).slice(Math.max(Messages.length - MAX_MESSAGES_PER_RESPONSE, 1))
 }
 
 app.post('/signup', function (req, res) {
@@ -40,6 +50,7 @@ app.post('/signup', function (req, res) {
     let sessionId = user.generateNewSessionID();
     Users[username] = user;
     Sessions[sessionId] = user.username;
+    Messages.push(new Message(-1, "Admin", "User " + username + " has joined the chat room"));
     res.send(JSON.stringify({
         success: true,
         message: 'User ' + username + ' has registered successfully !!!',
@@ -69,12 +80,12 @@ app.post('/login', function (req, res) {
     }
     //user already logged in with active session
     let user = Users[username];
-    let sessionhh = Sessions.indexOf(username);
-    if (sessionhh) {
+    Messages.push(new Message(-1, "Server Chat", "User " + username + " has joined the chat room"));
+    if (Sessions.indexOf(username)) {
         res.send(JSON.stringify({
             success: true,
             message: 'user ' + username + ' already logged in',
-            sessionId: sessionhh
+            sessionId: Sessions.indexOf(username)
         }));
         return;
     }
