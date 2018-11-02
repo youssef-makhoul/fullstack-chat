@@ -30,3 +30,24 @@
     transform: rotate(360deg);
   }
 }
+.chat {
+  border: 1px solid #999;
+  display: inline-block;
+  vertical-align: bottom;
+  position: relative;
+  margin: 0 5px;
+
+}
+
+.topcontainer {
+  position: fixed;
+  bottom: 50px;
+  left: 0;
+
+}
+.botcontainer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+
+}
