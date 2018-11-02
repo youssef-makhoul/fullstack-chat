@@ -6,9 +6,9 @@ let Message = require('./models/message');
 User.idCounter = 0;
 
 const MAX_MESSAGES_PER_RESPONSE = 10;
-let Users = [];
+let Users = {};
 let Messages = [];
-let Sessions = [];
+let Sessions = {};
 
 let app = express();
 app.use(bodyParser.raw({
@@ -37,8 +37,8 @@ function getMessages() {
 
 function getActiveUsers() {
     let activeUsers = [];
-    for (user in Users){
-        if(Users[user].isActive())
+    for (user in Users) {
+        if (Users[user].isActive())
             activeUsers.push(Users[user]);
     }
     return activeUsers;
@@ -55,15 +55,15 @@ app.post('/signup', function (req, res) {
         }));
         return;
     }
-    let user = new User(username, password);
-    let sessionId = user.generateNewSessionID();
-    Users[username] = user;
-    Sessions[sessionId] = user.username;
+    let sessionId = User.generateNewSessionID();
+    Users[username] = new User(username, password);
+    Sessions[sessionId] = username;
+    Users[username].makeActive();
     Messages.push(new Message(-1, "Admin", "User " + username + " has joined the chat room"));
+    res.set('Set-Cookie', sessionId);
     res.send(JSON.stringify({
         success: true,
-        message: 'User ' + username + ' has registered successfully !!!',
-        sessionId: sessionId
+        message: 'User ' + username + ' has registered successfully !!!'
     }));
 });
 
@@ -87,32 +87,22 @@ app.post('/login', function (req, res) {
         }));
         return;
     }
-    //user already logged in with active session
-    let user = Users[username];
-    Messages.push(new Message(-1, "Admin", "User " + username + " has joined the chat room"));
-    user.makeActive();
-    if (Sessions.indexOf(username)) {
-        res.send(JSON.stringify({
-            success: true,
-            message: 'user ' + username + ' already logged in',
-            sessionId: Sessions.indexOf(username)
-        }));
-        return;
-    }
     //login and assign new session id
-    let sessionId = user.generateNewsessionID();
+    let sessionId = User.generateNewSessionID();
     Sessions[sessionId] = username;
+    Users[username].makeActive();
+    Messages.push(new Message(-1, "Admin", "User " + username + " has joined the chat room"));
+    res.set('Set-Cookie', sessionId);
     res.send(JSON.stringify({
         success: true,
-        message: 'user ' + username + ' has logged in successfully !!!',
-        sessionId: sessionId
+        message: 'user ' + username + ' has logged in successfully !!!'
     }));
 });
 
 //add new message to message pool using sessionId
 app.post('/newmessage', function (req, res) {
     let parsedBody = JSON.parse(req.body);
-    let sessionId = parsedBody.sessionId;
+    let sessionId = req.headers.cookie;
     if (!Sessions[sessionId]) {
         res.send(JSON.stringify({
             success: false,
@@ -130,9 +120,8 @@ app.post('/newmessage', function (req, res) {
 })
 
 //user should provide valid session id to get the messages
-app.post('/getchat', function (req, res) {
-    let parsedBody = JSON.parse(req.body);
-    let sessionId = parsedBody.sessionId;
+app.get('/getchat', function (req, res) {
+    let sessionId = req.headers.cookie;
     if (!Sessions[sessionId]) {
         res.send(JSON.stringify({
             success: false,
@@ -144,6 +133,25 @@ app.post('/getchat', function (req, res) {
         success: true,
         messages: getMessages(),
         activeUsers: getActiveUsers()
+    }));
+});
+
+app.post('/signout', function (req, res) {
+    let sessionId = req.headers.cookie;
+    if (!Sessions[sessionId]) {
+        res.send(JSON.stringify({
+            success: false,
+            message: 'unrecognized sessionId'
+        }));
+        return;
+    }
+    Messages.push(new Message(-1, "Admin", "User " + Sessions[sessionId] + " has left the chat room"));
+    delete Sessions[sessionId];
+
+    
+    res.set('Set-Cookie', "");
+    res.send(JSON.stringify({
+        success: true,
     }));
 });
 

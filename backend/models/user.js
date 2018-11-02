@@ -7,7 +7,6 @@ class User {
         else this.id = User.newID.toString();
         this.username = username;
         this.password = password;
-        this.generateNewSessionID = this.generateNewSessionID.bind(this);
         this.userLastActivity = +new Date();
         this.isActive = this.isActive.bind(this);
         this.makeActive = this.makeActive.bind(this);
@@ -19,8 +18,8 @@ class User {
     makeActive() {
         this.userLastActivity = +new Date();
     }
-    generateNewSessionID() {
-        return Math.floor(Math.random() * Math.pow(10, 6));
+    static generateNewSessionID() {
+        return Math.floor(Math.random() * Math.pow(10, 15)).toString();
     }
     static get newID() {
         return User.idCounter++;

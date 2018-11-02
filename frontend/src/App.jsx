@@ -11,50 +11,52 @@ class App extends Component {
       messageText: "",
       activeUsers: []
     };
+    this.pollingChat = "";
     this.getFormatedMesseges = this.getFormatedMesseges.bind(this);
     this.handleSubmiteMessage = this.handleSubmiteMessage.bind(this);
     this.handleChangeMessageText = this.handleChangeMessageText.bind(this);
+    this.updateMessages = this.updateMessages.bind(this);
+    this.handleSignout = this.handleSignout.bind(this);
+  }
+  updateMessages() {
+    fetch("/getchat", {
+      method: "GET",
+      credentials: "same-origin"
+    })
+      .then(function(res) {
+        return res.text();
+      })
+      .then(
+        function(res) {
+          let parsedRes = JSON.parse(res);
+          if (parsedRes.success) {
+            if (!this.props.signedIn) 
+              this.props.dispatch({ type: "signIn" });
+            this.setState({
+              messages: parsedRes.messages,
+              activeUsers: parsedRes.activeUsers
+            });
+          }
+        }.bind(this)
+      )
+      .catch(() => {
+        clearInterval(this.pollingChat);
+        this.props.dispatch({
+          type: "disconnect"
+        });
+      });
   }
   componentDidMount() {
-    let update = function() {
-      if (!this.props.signedIn) return;
-      fetch("/getchat", {
-        method: "POST",
-        body: JSON.stringify({
-          sessionId: this.props.sessionId
-        })
-      })
-        .then(function(res) {
-          return res.text();
-        })
-        .then(
-          function(res) {
-            let parsedRes = JSON.parse(res);
-            if (parsedRes.success) {
-              this.setState({
-                messages: parsedRes.messages,
-                activeUsers: parsedRes.activeUsers
-              });
-            }
-          }.bind(this)
-        )
-        .catch(() => {
-          clearInterval(int);
-          this.props.dispatch({
-            type: "disconnect"
-          });
-        });
-    }.bind(this);
-    let int = setInterval(update, 500);
+    this.pollingChat = setInterval(this.updateMessages, 500);
   }
   handleSubmiteMessage(event) {
     event.preventDefault();
     let message = {
-      sessionId: this.props.sessionId,
       message: this.state.messageText
     };
     fetch("/newmessage", {
       method: "POST",
+      credentials: "same-origin",
       body: JSON.stringify(message)
     })
       .then(function(res) {
@@ -69,6 +71,21 @@ class App extends Component {
             });
         }.bind(this)
       );
+  }
+  handleSignout(event) {
+    event.preventDefault();
+    fetch('/signout',{
+      method:'POST',
+      credentials: "same-origin",
+    })
+    .then(function(res){
+      return res.text();
+    })
+    .then(function(res){
+      let parsedRes = JSON.parse(res);
+      if(parsedRes.success)
+        this.props.dispatch({type:"signOut"});
+    }.bind(this));
   }
   handleChangeMessageText(event) {
     this.setState({ messageText: event.target.value });
@@ -114,6 +131,7 @@ class App extends Component {
               <input type="submit" />
             </div>
           </form>
+          <button onClick={this.handleSignout}>Signout</button>
         </div>
       </div>
     );
@@ -130,7 +148,6 @@ class App extends Component {
 let mapStateToProps = function(state) {
   return {
     signedIn: state.signedIn,
-    sessionId: state.sessionId,
     connected: state.connected
   };
 };

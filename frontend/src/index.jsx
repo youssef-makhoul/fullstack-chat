@@ -10,8 +10,8 @@ let reducer = function(state, action) {
   if (action.type === "signIn") {
     return { ...state, signedIn: true };
   }
-  if (action.type === "updateSessionId") {
-    return { ...state, sessionId: action.sessionId, signedIn: true };
+  if (action.type === "signOut") {
+    return { ...state,  signedIn: false };
   }
   if (action.type === "disconnect") {
     return { ...state, connected: false };
@@ -23,8 +23,7 @@ const store = createStore(
   reducer, // reducer
   {
     signedIn: false,
-    sessionId: "",
-    connected:true
+    connected: true
   }, // initial state
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
 );

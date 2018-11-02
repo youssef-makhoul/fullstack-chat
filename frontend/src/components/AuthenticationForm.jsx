@@ -47,8 +47,7 @@ class AuthenticationForm extends Component {
           let success = parsedBody.success;
           if (success) {
             this.props.dispatch({
-              type: "updateSessionId",
-              sessionId: parsedBody.sessionId
+              type: "signIn"
             });
           } else {
             this.setState({
