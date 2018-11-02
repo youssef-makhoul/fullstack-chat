@@ -40,10 +40,10 @@
 }
 
 .topcontainer {
+  display: flex;
   position: fixed;
   bottom: 50px;
   left: 0;
-
 }
 .botcontainer {
   position: fixed;

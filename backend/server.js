@@ -15,7 +15,7 @@ app.use(bodyParser.raw({
     type: '*/*'
 }))
 
-Users.push(new User("Admin","Admin","-1"));
+//Users.push(new User("Admin", "Admin", "-1"));
 
 function getMessages() {
     if (Messages.length < 10) return Messages.map(message => {
@@ -33,6 +33,15 @@ function getMessages() {
                 subtime: message.getFormatedSubmiteTime()
             }
         }).slice(Math.max(Messages.length - MAX_MESSAGES_PER_RESPONSE, 1))
+}
+
+function getActiveUsers() {
+    let activeUsers = [];
+    for (user in Users){
+        if(Users[user].isActive())
+            activeUsers.push(Users[user]);
+    }
+    return activeUsers;
 }
 
 app.post('/signup', function (req, res) {
@@ -80,7 +89,8 @@ app.post('/login', function (req, res) {
     }
     //user already logged in with active session
     let user = Users[username];
-    Messages.push(new Message(-1, "Server Chat", "User " + username + " has joined the chat room"));
+    Messages.push(new Message(-1, "Admin", "User " + username + " has joined the chat room"));
+    user.makeActive();
     if (Sessions.indexOf(username)) {
         res.send(JSON.stringify({
             success: true,
@@ -111,16 +121,16 @@ app.post('/newmessage', function (req, res) {
         return;
     }
     let user = Users[Sessions[sessionId]];
+    user.makeActive();
     let message = new Message(user.id, user.username, parsedBody.message);
     Messages = Messages.concat(message);
     res.send(JSON.stringify({
-        success: true,
-        messages: getMessages()
+        success: true
     }));
 })
 
 //user should provide valid session id to get the messages
-app.post('/getmessages', function (req, res) {
+app.post('/getchat', function (req, res) {
     let parsedBody = JSON.parse(req.body);
     let sessionId = parsedBody.sessionId;
     if (!Sessions[sessionId]) {
@@ -132,7 +142,8 @@ app.post('/getmessages', function (req, res) {
     }
     res.send(JSON.stringify({
         success: true,
-        messages: getMessages()
+        messages: getMessages(),
+        activeUsers: getActiveUsers()
     }));
 });
 

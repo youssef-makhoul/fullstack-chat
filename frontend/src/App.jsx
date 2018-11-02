@@ -8,7 +8,8 @@ class App extends Component {
     super(props);
     this.state = {
       messages: [],
-      messageText: ""
+      messageText: "",
+      activeUsers: []
     };
     this.getFormatedMesseges = this.getFormatedMesseges.bind(this);
     this.handleSubmiteMessage = this.handleSubmiteMessage.bind(this);
@@ -17,7 +18,7 @@ class App extends Component {
   componentDidMount() {
     let update = function() {
       if (!this.props.signedIn) return;
-      fetch("/getmessages", {
+      fetch("/getchat", {
         method: "POST",
         body: JSON.stringify({
           sessionId: this.props.sessionId
@@ -31,7 +32,8 @@ class App extends Component {
             let parsedRes = JSON.parse(res);
             if (parsedRes.success) {
               this.setState({
-                messages: parsedRes.messages
+                messages: parsedRes.messages,
+                activeUsers: parsedRes.activeUsers
               });
             }
           }.bind(this)
@@ -43,7 +45,7 @@ class App extends Component {
           });
         });
     }.bind(this);
-    let int = setInterval(update, 1000);
+    let int = setInterval(update, 500);
   }
   handleSubmiteMessage(event) {
     event.preventDefault();
@@ -63,7 +65,6 @@ class App extends Component {
           let parsedBody = JSON.parse(res);
           if (parsedBody.success)
             this.setState({
-              messages: parsedBody.messages,
               messageText: ""
             });
         }.bind(this)
@@ -94,7 +95,14 @@ class App extends Component {
     );
     let chatForm = (
       <div>
-        <div className="topcontainer">{this.getFormatedMesseges()}</div>
+        <div className="topcontainer">
+          <div>{this.getFormatedMesseges()}</div>
+          <div>
+            {this.state.activeUsers.map((element, key) => {
+              return <h3 key={key}>{"          " + element.username}</h3>;
+            })}
+          </div>
+        </div>
         <div className="botcontainer">
           <form onSubmit={this.handleSubmiteMessage}>
             <div className="chat">
