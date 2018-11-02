@@ -5,6 +5,7 @@ let User = require('./models/user');
 let Message = require('./models/message');
 User.idCounter = 0;
 
+const MAX_MESSAGES_PER_RESPONSE = 10;
 let Users = [];
 let Messages = [];
 let Sessions = [];
@@ -14,6 +15,15 @@ app.use(bodyParser.raw({
     type: '*/*'
 }))
 
+function getMessages() {
+    return Messages.map(message => {
+        return {
+            username: message.username,
+            messageBody: message.messageBody,
+            subtime: message.getFormatedSubmiteTime()
+        }
+    }).slice(Math.max(Messages.length - MAX_MESSAGES_PER_RESPONSE, 1))
+}
 
 app.post('/signup', function (req, res) {
     let parsedBody = JSON.parse(req.body);
@@ -90,17 +100,11 @@ app.post('/newmessage', function (req, res) {
         return;
     }
     let user = Users[Sessions[sessionId]];
-    let message = new Message(user.id, user.username,parsedBody.message);
+    let message = new Message(user.id, user.username, parsedBody.message);
     Messages = Messages.concat(message);
     res.send(JSON.stringify({
         success: true,
-        messages: Messages.map(message => {
-            return {
-                username: message.username,
-                messageBody: message.messageBody,
-                subtime: message.getFormatedSubmiteTime()
-            }
-        })
+        messages: getMessages()
     }));
 })
 
@@ -117,13 +121,7 @@ app.post('/getmessages', function (req, res) {
     }
     res.send(JSON.stringify({
         success: true,
-        messages: Messages.map(message => {
-            return {
-                username: message.username,
-                messageBody: message.messageBody,
-                subtime: message.getFormatedSubmiteTime()
-            }
-        })
+        messages: getMessages()
     }));
 });
 
